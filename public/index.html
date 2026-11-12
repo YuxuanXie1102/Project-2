@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Easy Everyday Project 2 Version</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+<b class="brand">
+<i>✦</i>
+<span>Easy Everyday</span>
+</b>
+<div class="headerActions">
+<button id="dark">
+<span class="modeIcon">◐</span>
+<span class="modeText">夜间</span>
+</button>
+<div class="languageSwitch" role="group" aria-label="Language" data-no-translate><button type="button" data-language="zh-CN" aria-pressed="true" lang="zh-CN">中文</button><button type="button" data-language="en" aria-pressed="false" lang="en">English</button></div>
+</div>
+</header>
+<div class="shell">
+<aside id="desktopNav">
+</aside>
+<main>
+<section class="page active" id="home">
+<div class="intro">
+<small>MY DAY</small>
+<h1>今天，轻轻开始</h1>
+<p>重要的事情都在这里，一次完成就好。</p>
+</div>
+<article class="card hero">
+<div>
+<small id="state">
+</small>
+<h2 id="date">
+</h2>
+<p id="week">
+</p>
+<div class="bar">
+<i id="bar">
+</i>
+</div>
+<small id="progress">
+</small>
+<button id="reportBtn">生成当日报告</button>
+</div>
+<div class="calendar">
+<div class="calhead">
+<button id="prev">‹</button>
+<b id="month">
+</b>
+<button id="next">›</button>
+</div>
+<button id="calendarToggle" aria-expanded="true">收起日历</button>
+<div class="week">
+<span>日</span>
+<span>一</span>
+<span>二</span>
+<span>三</span>
+<span>四</span>
+<span>五</span>
+<span>六</span>
+</div>
+<div class="days" id="days">
+</div>
+</div>
+</article>
+<article class="card schedulePreview">
+<div class="title">
+<h2>每周安排</h2>
+<button id="openSchedule">编辑安排 →</button>
+</div>
+<div id="todaySchedule">
+</div>
+</article>
+<article class="card">
+<div class="title">
+<h2>特定日期待办</h2>
+<small id="todoDate">
+</small>
+</div>
+<div class="composer">
+<div class="pills" id="todoCats">
+</div>
+<div class="input">
+<input id="todo" placeholder="写下一件需要记得的事…">
+<button id="addTodo">＋ 添加</button>
+</div>
+</div>
+<div id="todos">
+</div>
+</article>
+<article class="card carryCard">
+<div class="title">
+<h2>出门检查 · 今天带了什么</h2>
+<small>位置每天清空</small>
+</div>
+<div class="carryAdd">
+<input id="carryName" placeholder="添加今天要带的物品">
+<label>
+<input id="carryAlways" type="checkbox">以后出门也带上</label>
+<button id="addCarry">添加</button>
+</div>
+<div id="carryList">
+</div>
+</article>
+<article class="card">
+<div class="title">
+<h2>待确认列表</h2>
+<button id="manageChecks">编辑待确认</button>
+</div>
+<div class="grid" id="checks">
+</div>
+</article>
+</section>
+<section class="page" id="schedule">
+<div class="scheduleHead">
+<button id="cancelSchedule">← 返回</button>
+<div>
+<small>WEEKLY PLAN</small>
+<h1>每周安排</h1>
+<p>课程、固定会议和活动都可以记录在这里。</p>
+</div>
+<button id="saveSchedule">保存</button>
+</div>
+<div class="weekEditor" id="weekEditor">
+</div>
+</section>
+<section class="page" id="records">
+<div class="intro">
+<small>RECORDS</small>
+<h1>我的记录</h1>
+<p>饮食、资产和消费，分类收在一起。</p>
+</div>
+<div class="tabs">
+<button class="active" data-tab="food">饮食</button>
+<button data-tab="assets">资产</button>
+<button data-tab="expense">记账</button>
+</div>
+<article class="card tab active" id="food">
+<div class="title">
+<h2>饮食与饮水</h2>
+<button id="manageMeals">编辑餐次</button>
+</div>
+<div class="grid" id="meals">
+</div>
+</article>
+<article class="card tab" id="assets">
+<div class="title">
+<h2>资产记录</h2>
+<div class="assetTitleActions"><button id="allAssetTrend">查看全部走势</button><button id="addAsset">添加资产</button></div>
+</div>
+<div class="grid" id="assetList">
+</div>
+</article>
+<article class="card tab" id="expense">
+<div class="title">
+<h2>月度记账</h2><button id="openBills">查看往月账单</button>
+<small id="expenseSum">
+</small>
+</div>
+<div class="expenseTop">
+<div class="donut" id="donut">
+<span>
+<small>本月支出</small>
+<b id="donutSum">
+</b>
+</span>
+</div>
+<div id="legend">
+</div>
+</div>
+<div class="form">
+<div class="pills" id="expenseCats">
+</div>
+<div class="input">
+<input id="amount" inputmode="decimal" placeholder="金额">
+<input id="merchant" placeholder="商户，例如：Sephora"><input id="note" placeholder="备注，例如：口红">
+<button id="addExpense">＋ 记一笔</button>
+</div>
+</div>
+<div id="expenses">
+</div>
+</article>
+</section>
+<section class="page" id="billsPage"><div class="scheduleHead"><button id="closeBills">← 返回</button><div><h1>月度账单</h1><p>按月份查看，或筛选最近的记录。</p></div></div><article class="card"><div class="billFilters"><label>月份<input id="billMonth" type="month"></label><label>范围<select id="billRange"><option value="month">所选月份</option><option value="3">近三个月</option><option value="6">近半年</option><option value="12">近一年</option></select></label><label>标签<select id="billCat"><option value="">全部</option></select></label><label>商户<input id="billMerchant" placeholder="不区分大小写"></label><label>最低金额<input id="billMin" type="number" min="0" inputmode="decimal"></label><label>最高金额<input id="billMax" type="number" min="0" inputmode="decimal"></label></div><div id="billSummary"></div><div id="billResults"></div></article></section>
+
+
+
+
+</main>
+</div>
+<nav id="mobileNav">
+</nav>
+<button id="todayBtn">回到今天</button>
+
+
+<div class="overlay" id="confirm">
+<div class="modal">
+<h2>重要确认</h2>
+<p id="confirmText">
+</p>
+<div>
+<button id="cancel">还没确认</button>
+<button id="yes">确定完成</button>
+</div>
+</div>
+</div>
+<div class="overlay" id="report">
+<div class="modal">
+<div class="title">
+<h2 id="reportTitle">
+</h2>
+<button id="close">✕</button>
+</div>
+<div class="score">
+<b id="score">
+</b>
+<small>日常事项完成度</small>
+</div>
+<div class="stats">
+<span>
+<b id="rTodo">
+</b>
+<small>待办完成</small>
+</span>
+<span>
+<b id="rFood">
+</b>
+<small>饮食记录</small>
+</span>
+<span>
+<b id="rMoney">
+</b>
+<small>当日支出</small>
+</span>
+</div>
+<p id="rNote">
+</p>
+</div>
+</div>
+<div class="overlay" id="checkManager">
+<div class="modal checkModal">
+<div class="title">
+<h2>编辑待确认</h2>
+<button id="closeChecks">✕</button>
+</div>
+<div id="checkRows">
+</div>
+<button id="newCheckTemplate">添加一项</button>
+<p class="tagHint">可设置仅当天、每天，或自定义每周生效日期。</p>
+</div>
+</div>
+<div class="overlay" id="mealManager">
+<div class="modal mealModal">
+<div class="title">
+<h2>编辑每日餐次</h2>
+<button id="closeMeals">✕</button>
+</div>
+<div id="mealRows">
+</div>
+<button id="newMeal">添加餐次</button>
+<p class="tagHint">餐次名称和数量可自由调整；删除餐次不会删除过去的饮食记录。</p>
+</div>
+</div>
+
+<div class="overlay" id="photoChoice">
+<div class="modal photoModal">
+<div class="title">
+<h2>添加确认照片</h2>
+<button id="closePhotoChoice">✕</button>
+</div>
+<p>为这一次确认留下照片记录。</p>
+<div class="photoActions">
+<button id="takePhoto">拍摄照片</button>
+<button id="uploadPhoto">上传照片</button>
+</div>
+<input id="cameraInput" type="file" accept="image/*" capture="environment" hidden>
+<input id="uploadInput" type="file" accept="image/*" hidden>
+</div>
+</div>
+<div class="overlay" id="assetTrend">
+<div class="modal assetTrendModal">
+<div class="title">
+<div><h2 id="assetTrendTitle">资产走势</h2><small id="assetTrendRange"></small></div>
+<button id="closeAssetTrend">✕</button>
+</div>
+<div class="trendPeriods"><button class="active" data-trend-days="7">近一周</button><button data-trend-days="30">近一个月</button></div>
+<div id="assetTrendLegend" class="assetTrendLegend"></div>
+<div id="assetTrendChart" class="assetTrendChart"></div>
+<div class="trendTableWrap"><table class="trendTable"><thead><tr id="assetTrendHead"><th>日期</th><th>金额</th><th>涨跌</th></tr></thead><tbody id="assetTrendTable"></tbody></table></div>
+</div>
+</div>
+<div class="overlay" id="photoViewer">
+<div class="modal photoModal">
+<div class="title">
+<h2 id="photoTitle">确认照片</h2>
+<button id="closePhotoViewer">✕</button>
+</div>
+<img id="evidenceImage" alt="待确认事项的照片记录">
+<p id="photoTime">
+</p>
+<button id="replacePhoto">重新拍摄或上传</button>
+</div>
+</div>
+<script src="app.js">
+</script>
+<script src="i18n.js"></script>
+</body>
+</html>
