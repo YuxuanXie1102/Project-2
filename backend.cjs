@@ -26,15 +26,16 @@
  * 同一浏览器可持续使用；清除 Cookie 后不能找回，其他浏览器不会同步。
  * Cookie 是访问凭据，不要分享。此版本没有账号恢复功能。
  *
- * 本文件提供独立可测试 API；现有 app.js 仍使用 localStorage，尚未接入。
- * 不实现现有 Cloudflare 照片接口，也不迁移已有浏览器记录。
+ * 前端通过 GET/PUT /api/state 读取和保存完整日常记录及自定义设置。
+ * /api/state 和 /api/records 共用 records 表。revision 防止多标签页相互覆盖。
+ * 不实现现有 Cloudflare 照片接口。旧浏览器记录由前端首次连接时迁移。
  */
 'use strict';
 
 // 1. 引入工具：Express 处理 HTTP；SQLite 保存记录。
 const express = require('express');
 const { DatabaseSync } = require('node:sqlite');
-const { randomBytes, randomUUID } = require('node:crypto');
+const { randomBytes, randomUUID, createHash } = require('node:crypto');
 const { mkdirSync } = require('node:fs');
 const path = require('node:path');
 
@@ -50,6 +51,9 @@ db.exec(`PRAGMA journal_mode = WAL;
     created_at TEXT NOT NULL, updated_at TEXT NOT NULL
   );
   CREATE INDEX IF NOT EXISTS records_owner_day ON records(owner, day, type);`);
+db.exec(`CREATE TABLE IF NOT EXISTS preferences (
+  owner TEXT PRIMARY KEY, extra TEXT NOT NULL, revision INTEGER NOT NULL
+);`);
 const types = new Set(['todos', 'carry', 'checks', 'foods', 'assets', 'expenses']);
 const cookieName = 'easy_everyday_device';
 app.disable('x-powered-by');
@@ -75,7 +79,7 @@ app.use('/api', (req, res, next) => {
   }
   next();
 });
-app.use('/api', express.json({ limit: '64kb' }));
+app.use('/api', express.json({ limit: '2mb' }));
 
 // 3. 输入检查：日期、类型和记录内容，错误会返回 400。
 function validDay(day) {
@@ -98,6 +102,60 @@ const find = db.prepare('SELECT * FROM records WHERE id = ? AND owner = ?');
 
 // 4. CRUD：Create / Read / Update / Delete。
 app.get('/api/health', (req, res) => res.json({ ok: true, storage: 'sqlite' }));
+// 前端一次读取全部日期，保证日历、历史账单和资产走势使用同一份数据。
+const pref = db.prepare('SELECT * FROM preferences WHERE owner = ?');
+const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+function safeTree(value, depth = 0) {
+  if (depth > 30) return false;
+  if (value === null || typeof value !== 'object') return true;
+  return Object.entries(value).every(([k, v]) => !['__proto__', 'constructor', 'prototype'].includes(k) && safeTree(v, depth + 1));
+}
+function readState(owner) {
+  const store = {};
+  for (const row of db.prepare('SELECT * FROM records WHERE owner = ? ORDER BY rowid').all(owner)) {
+    store[row.day] ||= Object.fromEntries([...types].map(type => [type, []]));
+    const data = JSON.parse(row.data);
+    store[row.day][row.type].push({ ...data, id: data.id || row.id });
+  }
+  const settings = pref.get(owner);
+  return { store, extra: settings ? JSON.parse(settings.extra) : {}, revision: settings?.revision || 0,
+    exists: !!settings || Object.keys(store).length > 0,
+    namespace: createHash('sha256').update(owner).digest('hex').slice(0, 24) };
+}
+app.get('/api/state', (req, res) => res.json(readState(req.owner)));
+app.put('/api/state', (req, res) => {
+  const body = req.body || {};
+  if (!object(body.store) || !object(body.extra) || !Number.isSafeInteger(body.revision) || body.revision < 0 || !safeTree(body))
+    return res.status(400).json({ error: 'Invalid state' });
+  const rows = [];
+  for (const [day, daily] of Object.entries(body.store)) {
+    if (!validDay(day) || !object(daily) || Object.keys(daily).some(type => !types.has(type)))
+      return res.status(400).json({ error: 'Invalid daily records' });
+    for (const [type, items] of Object.entries(daily)) {
+      if (!Array.isArray(items) || items.some(item => !object(item) || typeof item.id !== 'string' || !item.id || item.id.length > 200))
+        return res.status(400).json({ error: 'Each record requires an id' });
+      if (new Set(items.map(item => item.id)).size !== items.length) return res.status(400).json({ error: 'Duplicate record id' });
+      for (const item of items) rows.push([createHash('sha256').update(JSON.stringify([req.owner, day, type, item.id])).digest('hex'), req.owner, day, type, JSON.stringify(item)]);
+    }
+  }
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    const revision = pref.get(req.owner)?.revision || 0;
+    if (revision !== body.revision) { db.exec('ROLLBACK'); return res.status(409).json({ error: 'State changed in another tab. Reload before saving.' }); }
+    db.prepare('DELETE FROM records WHERE owner = ?').run(req.owner);
+    const insert = db.prepare('INSERT INTO records VALUES (?, ?, ?, ?, ?, ?, ?)');
+    const now = new Date().toISOString();
+    for (const row of rows) insert.run(...row, now, now);
+    db.prepare('INSERT INTO preferences VALUES (?, ?, ?) ON CONFLICT(owner) DO UPDATE SET extra=excluded.extra, revision=excluded.revision')
+      .run(req.owner, JSON.stringify(body.extra), revision + 1);
+    db.exec('COMMIT');
+    res.json({ revision: revision + 1 });
+  } catch (error) { db.exec('ROLLBACK'); throw error; }
+});
+// 单条 CRUD 更新也推进版本号，阻止旧的前端快照覆盖 API 修改。
+function advanceRevision(owner) {
+  db.prepare("INSERT INTO preferences VALUES (?, '{}', 1) ON CONFLICT(owner) DO UPDATE SET revision=revision+1").run(owner);
+}
 app.get('/api/records', (req, res) => {
   const { day, type } = req.query;
   if (!validDay(day) || !types.has(type)) return res.status(400).json({ error: 'Valid day and type are required' });
@@ -111,6 +169,7 @@ app.post('/api/records', (req, res) => {
   const id = randomUUID(), now = new Date().toISOString();
   db.prepare('INSERT INTO records VALUES (?, ?, ?, ?, ?, ?, ?)')
     .run(id, req.owner, day, type, JSON.stringify(data), now, now);
+  advanceRevision(req.owner);
   res.status(201).location('/api/records/' + id).json(output(find.get(id, req.owner)));
 });
 app.get('/api/records/:id', (req, res) => {
@@ -129,11 +188,13 @@ app.patch('/api/records/:id', (req, res) => {
   if (!validData(data)) return res.status(400).json({ error: 'Invalid merged data' });
   db.prepare('UPDATE records SET day = ?, type = ?, data = ?, updated_at = ? WHERE id = ? AND owner = ?')
     .run(body.day ?? row.day, body.type ?? row.type, JSON.stringify(data), new Date().toISOString(), row.id, req.owner);
+  advanceRevision(req.owner);
   res.json(output(find.get(row.id, req.owner)));
 });
 app.delete('/api/records/:id', (req, res) => {
   const result = db.prepare('DELETE FROM records WHERE id = ? AND owner = ?').run(req.params.id, req.owner);
   if (!result.changes) return res.status(404).json({ error: 'Record not found' });
+  advanceRevision(req.owner);
   res.status(204).end();
 });
 app.use('/api', (req, res) => res.status(404).json({ error: 'API route not found' }));
@@ -150,3 +211,4 @@ const server = app.listen(port, '0.0.0.0', () => console.log(`Easy Everyday: htt
 function stop() { server.close(() => { db.close(); process.exit(0); }); }
 process.on('SIGTERM', stop);
 process.on('SIGINT', stop);
+

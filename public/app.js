@@ -1,5 +1,7 @@
-(() => {
+(async () => {
   'use strict';
+  // 先加载后端数据，再生成页面；连接失败时保留备份，避免写入空数据。
+  if (!window.GentleAPI || !await window.GentleAPI.init()) return;
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const esc = (v = '') => String(v).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -29,8 +31,8 @@
   let selected = key(today), shown = new Date(today), pending = null, expenseCat = '饮食', todoCat = '日常';
   const day = (k = selected) => store[k] ||= defaults();
   const datePlus=(date,n)=>{const d=parseDay(date);d.setDate(d.getDate()+n);return key(d)};
-  const save = () => {localStorage.setItem('gentle-static', JSON.stringify(store))};
-  const saveExtra=()=>{localStorage.setItem('gentle-extra',JSON.stringify(extra))};
+  const save = () => {localStorage.setItem('gentle-static', JSON.stringify(store));window.GentleAPI.save()};
+  const saveExtra=()=>{localStorage.setItem('gentle-extra',JSON.stringify(extra));window.GentleAPI.save()};
   const cnDate = d => `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
   const weekdays = '日一二三四五六';
   if(!Array.isArray(extra.checkTemplates)){
@@ -305,3 +307,4 @@
   document.addEventListener('click',e=>{const button=e.target.closest('[data-edit-exp],[data-edit-food]');if(!button)return;e.preventDefault();e.stopImmediatePropagation();const row=button.closest('.expenseRow,.foodRow'),view=row.querySelector('.expenseView,.foodView'),edit=row.querySelector('.inlineEdit');if(!edit)return;view.hidden=true;edit.hidden=false;edit.classList.add('recordEditPopup');const labels=button.hasAttribute('data-edit-exp')?['金额','商户','备注','标签']:['标签','食物或饮品'];[...edit.querySelectorAll('input,select')].forEach((field,i)=>{if(field.parentElement?.classList.contains('recordEditField'))return;const wrap=document.createElement('label');wrap.className='recordEditField';wrap.append(document.createTextNode(labels[i]||'内容'));field.before(wrap);wrap.append(field)})},true);
   applyTheme();render();
 })();
+
