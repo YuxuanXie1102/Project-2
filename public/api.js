@@ -5,7 +5,16 @@
   const metaKey = 'gentle-api-sync';
   let meta, active = false, busy = false, timer, changed = 0, blocked = false;
   const read = key => { try { return JSON.parse(localStorage.getItem(key)) || {}; } catch { return {}; } };
-  const state = () => ({ store: read(keys[0]), extra: read(keys[1]) });
+  // Project 2 only keeps Home data, including when importing an older browser cache.
+  function homeState(value) {
+    const store = Object.fromEntries(Object.entries(value.store || {}).map(([day, daily]) => [day,
+      Object.fromEntries(['todos', 'carry', 'checks'].map(type => [type, daily[type] || []]))]));
+    const source = value.extra || {};
+    const extra = Object.fromEntries(['schedule', 'todoCats', 'checkTemplates', 'carryDefaults'].filter(key => key in source).map(key => [key, source[key]]));
+    extra.archivedColors = { todo: source.archivedColors?.todo || {} };
+    return { store, extra };
+  }
+  const state = () => homeState({ store: read(keys[0]), extra: read(keys[1]) });
   const english = () => localStorage.getItem('gentle-language') === 'en';
   const messages = {
     loading: ['正在连接数据服务…', 'Connecting to data service…'],
@@ -40,7 +49,12 @@
     mode = value; status.textContent = messages[value][english() ? 1 : 0]; recover.hidden = value !== 'conflict';
     document.querySelector('main').inert = ['loading', 'failed', 'conflict'].includes(value);
   }
-  new MutationObserver(() => show(mode)).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+  let lastLanguage = document.documentElement.lang;
+  new MutationObserver(() => {
+    if (document.documentElement.lang === lastLanguage) return;
+    lastLanguage = document.documentElement.lang;
+    show(mode);
+  }).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
   function persistMeta() { localStorage.setItem(metaKey, JSON.stringify(meta)); }
   async function request(method, body) {
     const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), 15000);
@@ -66,7 +80,8 @@
     async init() {
       show('loading');
       try {
-        const remote = await request('GET'); meta = read(metaKey);
+        const response = await request('GET');
+        const remote = { ...response, ...homeState(response) }; meta = read(metaKey);
         if (meta.pending && (meta.namespace !== remote.namespace || meta.revision !== remote.revision)) {
           blocked = true; show('conflict'); return false;
         }
@@ -80,6 +95,10 @@
           blocked = true; show('conflict'); return false;
         }
         const pending = !!meta.pending || !remote.exists;
+        // Remove fields belonging to the old Records screen before app.js starts.
+        const current = state();
+        localStorage.setItem(keys[0], JSON.stringify(current.store));
+        localStorage.setItem(keys[1], JSON.stringify(current.extra));
         meta = { namespace: remote.namespace, revision: remote.revision, pending }; persistMeta(); active = true;
         if (pending) await flush(); else show('saved');
         return true;
@@ -97,3 +116,4 @@
   // 另一个标签页写入时，禁止当前旧页面再覆盖它。后端 revision 是第二层保护。
   window.addEventListener('storage', event => { if (event.key === metaKey && active) { blocked = true; show('conflict'); } });
 })();
+

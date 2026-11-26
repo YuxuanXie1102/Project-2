@@ -1,6 +1,6 @@
 # Easy Everyday Project 2 Version
 
-A bilingual daily organizer with Home and Records, a Chinese/English switch, and dark mode.
+A bilingual Home-only daily organizer with a Chinese/English switch and dark mode. Records and desktop/mobile navigation have been removed.
 
 ## Files
 
@@ -8,7 +8,9 @@ A bilingual daily organizer with Home and Records, a Chinese/English switch, and
 - `worker/index.js`: existing Cloudflare Worker for confirmation photos.
 - `migrations/`: original database schema.
 
-Daily records, weekly schedules, meal definitions, labels, and recurring items now load from and save to the Node.js backend. Browser localStorage keeps a backup and pending changes. Language, dark mode, and calendar display preferences remain local to the browser.
+Home keeps the calendar, daily tasks, carry checklist, confirmations/photos, weekly schedule editor, and daily report. The report summarizes tasks, confirmations, and packed items. Food, assets, trends, expenses, bills, and their editors are removed.
+
+Home tasks, weekly schedules, task labels, and recurring items load from and save to the Node.js backend. Browser localStorage keeps a backup and pending changes. Language, dark mode, and calendar display preferences remain local to the browser. Imports and API responses are limited to Home data. Existing database rows from removed features are not exposed or destructively purged.
 
 ## Run in GitHub Codespaces
 
@@ -46,4 +48,5 @@ Current Sites publication: https://gentle-day-api-lab.xieyx2007.chatgpt.site/
 Imported from the published Project 2 version 4, source commit d0dff8a4e8912fe0dc761dd02da306a6aa07e352.
 
 Future changes requested in this conversation can be committed to this repository. Connecting the ChatGPT account does not create a background Sites-to-GitHub mirror. A hosting service connected to this repository can deploy after commits once configured.
+
 

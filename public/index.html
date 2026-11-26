@@ -1,6 +1,5 @@
 <!doctype html>
-<html lang="zh-CN">
-<head>
+<html lang="zh-CN"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Easy Everyday Project 2 Version</title>
@@ -18,12 +17,11 @@
 <span class="modeIcon">◐</span>
 <span class="modeText">夜间</span>
 </button>
-<div class="languageSwitch" role="group" aria-label="Language" data-no-translate><button type="button" data-language="zh-CN" aria-pressed="true" lang="zh-CN">中文</button><button type="button" data-language="en" aria-pressed="false" lang="en">English</button></div>
+<div class="languageSwitch" role="group" aria-label="Language" data-no-translate=""><button type="button" data-language="zh-CN" aria-pressed="true" lang="zh-CN">中文</button><button type="button" data-language="en" aria-pressed="false" lang="en">English</button></div>
 </div>
 </header>
 <div class="shell">
-<aside id="desktopNav">
-</aside>
+
 <main>
 <section class="page active" id="home">
 <div class="intro">
@@ -129,72 +127,15 @@
 <div class="weekEditor" id="weekEditor">
 </div>
 </section>
-<section class="page" id="records">
-<div class="intro">
-<small>RECORDS</small>
-<h1>我的记录</h1>
-<p>饮食、资产和消费，分类收在一起。</p>
-</div>
-<div class="tabs">
-<button class="active" data-tab="food">饮食</button>
-<button data-tab="assets">资产</button>
-<button data-tab="expense">记账</button>
-</div>
-<article class="card tab active" id="food">
-<div class="title">
-<h2>饮食与饮水</h2>
-<button id="manageMeals">编辑餐次</button>
-</div>
-<div class="grid" id="meals">
-</div>
-</article>
-<article class="card tab" id="assets">
-<div class="title">
-<h2>资产记录</h2>
-<div class="assetTitleActions"><button id="allAssetTrend">查看全部走势</button><button id="addAsset">添加资产</button></div>
-</div>
-<div class="grid" id="assetList">
-</div>
-</article>
-<article class="card tab" id="expense">
-<div class="title">
-<h2>月度记账</h2><button id="openBills">查看往月账单</button>
-<small id="expenseSum">
-</small>
-</div>
-<div class="expenseTop">
-<div class="donut" id="donut">
-<span>
-<small>本月支出</small>
-<b id="donutSum">
-</b>
-</span>
-</div>
-<div id="legend">
-</div>
-</div>
-<div class="form">
-<div class="pills" id="expenseCats">
-</div>
-<div class="input">
-<input id="amount" inputmode="decimal" placeholder="金额">
-<input id="merchant" placeholder="商户，例如：Sephora"><input id="note" placeholder="备注，例如：口红">
-<button id="addExpense">＋ 记一笔</button>
-</div>
-</div>
-<div id="expenses">
-</div>
-</article>
-</section>
-<section class="page" id="billsPage"><div class="scheduleHead"><button id="closeBills">← 返回</button><div><h1>月度账单</h1><p>按月份查看，或筛选最近的记录。</p></div></div><article class="card"><div class="billFilters"><label>月份<input id="billMonth" type="month"></label><label>范围<select id="billRange"><option value="month">所选月份</option><option value="3">近三个月</option><option value="6">近半年</option><option value="12">近一年</option></select></label><label>标签<select id="billCat"><option value="">全部</option></select></label><label>商户<input id="billMerchant" placeholder="不区分大小写"></label><label>最低金额<input id="billMin" type="number" min="0" inputmode="decimal"></label><label>最高金额<input id="billMax" type="number" min="0" inputmode="decimal"></label></div><div id="billSummary"></div><div id="billResults"></div></article></section>
+
+
 
 
 
 
 </main>
 </div>
-<nav id="mobileNav">
-</nav>
+
 <button id="todayBtn">回到今天</button>
 
 
@@ -228,14 +169,14 @@
 <small>待办完成</small>
 </span>
 <span>
-<b id="rFood">
+<b id="rChecks">
 </b>
-<small>饮食记录</small>
+<small>确认完成</small>
 </span>
 <span>
-<b id="rMoney">
+<b id="rCarry">
 </b>
-<small>当日支出</small>
+<small>物品带齐</small>
 </span>
 </div>
 <p id="rNote">
@@ -254,18 +195,7 @@
 <p class="tagHint">可设置仅当天、每天，或自定义每周生效日期。</p>
 </div>
 </div>
-<div class="overlay" id="mealManager">
-<div class="modal mealModal">
-<div class="title">
-<h2>编辑每日餐次</h2>
-<button id="closeMeals">✕</button>
-</div>
-<div id="mealRows">
-</div>
-<button id="newMeal">添加餐次</button>
-<p class="tagHint">餐次名称和数量可自由调整；删除餐次不会删除过去的饮食记录。</p>
-</div>
-</div>
+
 
 <div class="overlay" id="photoChoice">
 <div class="modal photoModal">
@@ -278,22 +208,11 @@
 <button id="takePhoto">拍摄照片</button>
 <button id="uploadPhoto">上传照片</button>
 </div>
-<input id="cameraInput" type="file" accept="image/*" capture="environment" hidden>
-<input id="uploadInput" type="file" accept="image/*" hidden>
+<input id="cameraInput" type="file" accept="image/*" capture="environment" hidden="">
+<input id="uploadInput" type="file" accept="image/*" hidden="">
 </div>
 </div>
-<div class="overlay" id="assetTrend">
-<div class="modal assetTrendModal">
-<div class="title">
-<div><h2 id="assetTrendTitle">资产走势</h2><small id="assetTrendRange"></small></div>
-<button id="closeAssetTrend">✕</button>
-</div>
-<div class="trendPeriods"><button class="active" data-trend-days="7">近一周</button><button data-trend-days="30">近一个月</button></div>
-<div id="assetTrendLegend" class="assetTrendLegend"></div>
-<div id="assetTrendChart" class="assetTrendChart"></div>
-<div class="trendTableWrap"><table class="trendTable"><thead><tr id="assetTrendHead"><th>日期</th><th>金额</th><th>涨跌</th></tr></thead><tbody id="assetTrendTable"></tbody></table></div>
-</div>
-</div>
+
 <div class="overlay" id="photoViewer">
 <div class="modal photoModal">
 <div class="title">
@@ -310,6 +229,8 @@
 <script src="app.js">
 </script>
 <script src="i18n.js"></script>
-</body>
-</html>
 
+
+
+
+</body></html>

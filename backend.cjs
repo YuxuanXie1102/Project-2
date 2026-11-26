@@ -16,7 +16,7 @@
  * POST 示例：{ "day":"2026-11-12", "type":"todos",
  *              "data":{ "text":"Finish homework", "done":false, "cat":"作业" } }
  * PATCH 示例：{ "data":{ "done":true } }（合并到原 data）
- * type 对应现有前端的 todos/carry/checks/foods/assets/expenses。
+ * type 对应现有前端的 todos/carry/checks。
  *
  * 存储：SQLite 文件自动创建在 .easy-everyday-data/records.sqlite。
  * 不要将此目录、node_modules 或真实用户数据上传 GitHub。
@@ -54,7 +54,7 @@ db.exec(`PRAGMA journal_mode = WAL;
 db.exec(`CREATE TABLE IF NOT EXISTS preferences (
   owner TEXT PRIMARY KEY, extra TEXT NOT NULL, revision INTEGER NOT NULL
 );`);
-const types = new Set(['todos', 'carry', 'checks', 'foods', 'assets', 'expenses']);
+const types = new Set(['todos', 'carry', 'checks']);
 const cookieName = 'easy_everyday_device';
 app.disable('x-powered-by');
 
@@ -98,13 +98,18 @@ function output(row) {
   return { id: row.id, day: row.day, type: row.type, data: JSON.parse(row.data),
     createdAt: row.created_at, updatedAt: row.updated_at };
 }
-const find = db.prepare('SELECT * FROM records WHERE id = ? AND owner = ?');
+const find = db.prepare("SELECT * FROM records WHERE id = ? AND owner = ? AND type IN ('todos','carry','checks')");
 
 // 4. CRUD：Create / Read / Update / Delete。
 app.get('/api/health', (req, res) => res.json({ ok: true, storage: 'sqlite' }));
 // 前端一次读取全部日期，保证日历、历史账单和资产走势使用同一份数据。
 const pref = db.prepare('SELECT * FROM preferences WHERE owner = ?');
 const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
+function homeExtra(source) {
+  const extra = Object.fromEntries(['schedule', 'todoCats', 'checkTemplates', 'carryDefaults'].filter(key => key in source).map(key => [key, source[key]]));
+  extra.archivedColors = { todo: source.archivedColors?.todo || {} };
+  return extra;
+}
 function safeTree(value, depth = 0) {
   if (depth > 30) return false;
   if (value === null || typeof value !== 'object') return true;
@@ -113,12 +118,13 @@ function safeTree(value, depth = 0) {
 function readState(owner) {
   const store = {};
   for (const row of db.prepare('SELECT * FROM records WHERE owner = ? ORDER BY rowid').all(owner)) {
+    if (!types.has(row.type)) continue;
     store[row.day] ||= Object.fromEntries([...types].map(type => [type, []]));
     const data = JSON.parse(row.data);
     store[row.day][row.type].push({ ...data, id: data.id || row.id });
   }
   const settings = pref.get(owner);
-  return { store, extra: settings ? JSON.parse(settings.extra) : {}, revision: settings?.revision || 0,
+  return { store, extra: homeExtra(settings ? JSON.parse(settings.extra) : {}), revision: settings?.revision || 0,
     exists: !!settings || Object.keys(store).length > 0,
     namespace: createHash('sha256').update(owner).digest('hex').slice(0, 24) };
 }
@@ -142,12 +148,12 @@ app.put('/api/state', (req, res) => {
   try {
     const revision = pref.get(req.owner)?.revision || 0;
     if (revision !== body.revision) { db.exec('ROLLBACK'); return res.status(409).json({ error: 'State changed in another tab. Reload before saving.' }); }
-    db.prepare('DELETE FROM records WHERE owner = ?').run(req.owner);
+    db.prepare("DELETE FROM records WHERE owner = ? AND type IN ('todos','carry','checks')").run(req.owner);
     const insert = db.prepare('INSERT INTO records VALUES (?, ?, ?, ?, ?, ?, ?)');
     const now = new Date().toISOString();
     for (const row of rows) insert.run(...row, now, now);
     db.prepare('INSERT INTO preferences VALUES (?, ?, ?) ON CONFLICT(owner) DO UPDATE SET extra=excluded.extra, revision=excluded.revision')
-      .run(req.owner, JSON.stringify(body.extra), revision + 1);
+      .run(req.owner, JSON.stringify(homeExtra(body.extra)), revision + 1);
     db.exec('COMMIT');
     res.json({ revision: revision + 1 });
   } catch (error) { db.exec('ROLLBACK'); throw error; }
@@ -192,7 +198,7 @@ app.patch('/api/records/:id', (req, res) => {
   res.json(output(find.get(row.id, req.owner)));
 });
 app.delete('/api/records/:id', (req, res) => {
-  const result = db.prepare('DELETE FROM records WHERE id = ? AND owner = ?').run(req.params.id, req.owner);
+  const result = db.prepare("DELETE FROM records WHERE id = ? AND owner = ? AND type IN ('todos','carry','checks')").run(req.params.id, req.owner);
   if (!result.changes) return res.status(404).json({ error: 'Record not found' });
   advanceRevision(req.owner);
   res.status(204).end();
@@ -211,4 +217,5 @@ const server = app.listen(port, '0.0.0.0', () => console.log(`Easy Everyday: htt
 function stop() { server.close(() => { db.close(); process.exit(0); }); }
 process.on('SIGTERM', stop);
 process.on('SIGINT', stop);
+
 
