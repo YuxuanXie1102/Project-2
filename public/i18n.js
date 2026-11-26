@@ -24,7 +24,9 @@
   const observe = () => observer.observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:['placeholder','aria-label','title']});
   function apply() {
     observer.disconnect();
-    document.documentElement.lang=language;
+    if (document.documentElement.lang !== language) {
+    document.documentElement.lang = language;
+}
     // Option labels may change, but their underlying category values must not.
     document.querySelectorAll('option:not([value])').forEach(option=>option.setAttribute('value',option.textContent));
     const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);
