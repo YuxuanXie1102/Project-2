@@ -107,38 +107,11 @@
 
   function renderChecks() {
     const items=checksFor();
-    $('#checks').innerHTML=[false,true].map(important=>`<section class="checkBox ${important?'important':''}"><header>${important?icons.lock:icons.sparkle}<span><b>${important?'重要确认':'轻松打卡'}</b><small>${important?'确认后才会完成':'点一下就好'}</small></span></header>${items.filter(c=>c.important===important).map(c=>`<div class="checkRow ${c.done?'done':''}"><button class="tick" data-check="${c.id}">${c.done?icons.check:''}</button><span>${esc(c.text)}</span><button class="evidenceBtn" data-evidence="${c.id}" data-evidence-text="${esc(c.text)}">照片</button></div>`).join('')||'<p class="checkEmpty">这一天没有待确认事项</p>'}</section>`).join('');
+    $('#checks').innerHTML=[false,true].map(important=>`<section class="checkBox ${important?'important':''}"><header>${important?icons.lock:icons.sparkle}<span><b>${important?'重要确认':'轻松打卡'}</b><small>${important?'确认后才会完成':'点一下就好'}</small></span></header>${items.filter(c=>c.important===important).map(c=>`<div class="checkRow ${c.done?'done':''}"><button class="tick" data-check="${c.id}">${c.done?icons.check:''}</button><span>${esc(c.text)}</span></div>`).join('')||'<p class="checkEmpty">这一天没有待确认事项</p>'}</section>`).join('');
     $$('[data-check]').forEach(b=>b.onclick=()=>{const c=items.find(x=>x.id===b.dataset.check);if(c.important&&!c.done){pending=c;$('#confirmText').textContent=`确定已经“${c.text}”了吗？`;$('#confirm').classList.add('open')}else{setCheckDone(c,!c.done);render()}});
-    bindEvidenceButtons();
   }
   $('#cancel').onclick=()=>$('#confirm').classList.remove('open');
   $('#yes').onclick=()=>{if(pending){setCheckDone(pending,true);pending=null;render()}$('#confirm').classList.remove('open')};
-
-  const evidenceCache=new Map();let evidenceTarget=null;
-  const evidenceKey=(date,id)=>`${date}:${id}`;
-  async function evidenceMeta(date,id){
-    const k=evidenceKey(date,id);if(evidenceCache.has(k))return evidenceCache.get(k);
-    try{const r=await fetch(`/api/evidence?day=${encodeURIComponent(date)}&checkId=${encodeURIComponent(id)}`,{cache:'no-store'});if(!r.ok)throw 0;const data=await r.json();evidenceCache.set(k,data);return data}catch{return {exists:false,error:true}}
-  }
-  function bindEvidenceButtons(){
-    $$('[data-evidence]').forEach(button=>{
-      const date=selected,id=button.dataset.evidence,text=button.dataset.evidenceText;
-      evidenceMeta(date,id).then(meta=>{if(button.isConnected&&selected===date){button.textContent=meta.exists?'查看照片':'拍摄 / 上传';button.classList.toggle('hasPhoto',!!meta.exists)}});
-      button.onclick=async()=>{evidenceTarget={date,id,text};const meta=await evidenceMeta(date,id);if(meta.exists)openEvidence(meta);else $('#photoChoice').classList.add('open')};
-    });
-  }
-  function openEvidence(meta){
-    if(!evidenceTarget)return;$('#photoTitle').textContent=evidenceTarget.text;$('#evidenceImage').src=`/api/evidence?day=${encodeURIComponent(evidenceTarget.date)}&checkId=${encodeURIComponent(evidenceTarget.id)}&view=1&t=${meta.uploadedAt}`;$('#photoTime').textContent=`拍摄或上传于 ${new Date(meta.uploadedAt).toLocaleString('zh-CN')}`;$('#photoChoice').classList.remove('open');$('#photoViewer').classList.add('open');
-  }
-  async function uploadEvidence(file){
-    if(!file||!evidenceTarget)return;if(!file.type.startsWith('image/'))return alert(window.easyEverydayTranslate?.('请选择照片文件。')||'请选择照片文件。');if(file.size>8*1024*1024)return alert(window.easyEverydayTranslate?.('照片请控制在 8MB 以内。')||'照片请控制在 8MB 以内。');
-    const target={...evidenceTarget};const buttons=$$(`[data-evidence="${CSS.escape(target.id)}"]`);buttons.forEach(b=>{b.disabled=true;b.textContent='上传中…'});$('#photoChoice').classList.remove('open');
-    try{const r=await fetch(`/api/evidence?day=${encodeURIComponent(target.date)}&checkId=${encodeURIComponent(target.id)}&checkText=${encodeURIComponent(target.text)}`,{method:'PUT',headers:{'Content-Type':file.type},body:file});if(!r.ok)throw new Error();const meta=await r.json();evidenceCache.set(evidenceKey(target.date,target.id),meta);evidenceTarget=target;renderChecks();openEvidence(meta)}catch{alert(window.easyEverydayTranslate?.('照片暂时没有上传成功，请稍后再试。')||'照片暂时没有上传成功，请稍后再试。');renderChecks()}
-  }
-  $('#takePhoto').onclick=()=>$('#cameraInput').click();$('#uploadPhoto').onclick=()=>$('#uploadInput').click();
-  $('#cameraInput').onchange=e=>{uploadEvidence(e.target.files?.[0]);e.target.value=''};$('#uploadInput').onchange=e=>{uploadEvidence(e.target.files?.[0]);e.target.value=''};
-  $('#closePhotoChoice').onclick=()=>$('#photoChoice').classList.remove('open');$('#closePhotoViewer').onclick=()=>{$('#photoViewer').classList.remove('open');$('#evidenceImage').removeAttribute('src')};
-  $('#replacePhoto').onclick=()=>{$('#photoViewer').classList.remove('open');$('#photoChoice').classList.add('open')};
 
   const repeatText=x=>x==='once'?'仅今天':x==='weekly'?'自定义':'每天';
   function renderCheckManager(){

@@ -5,10 +5,9 @@ A bilingual Home-only daily organizer with a Chinese/English switch and dark mod
 ## Files
 
 - `public/`: current website HTML, CSS, JavaScript, and image assets.
-- `worker/index.js`: existing Cloudflare Worker for confirmation photos.
 - `migrations/`: original database schema.
 
-Home keeps the calendar, daily tasks, carry checklist, confirmations/photos, weekly schedule editor, and daily report. The report summarizes tasks, confirmations, and packed items. Food, assets, trends, expenses, bills, and their editors are removed.
+Home keeps the calendar, daily tasks, carry checklist, confirmations, weekly schedule editor, and daily report. The report summarizes tasks, confirmations, and packed items. Food, assets, trends, expenses, bills, and their editors are removed.
 
 Home tasks, weekly schedules, task labels, and recurring items load from and save to the Node.js backend. Browser localStorage keeps a backup and pending changes. Language, dark mode, and calendar display preferences remain local to the browser. Imports and API responses are limited to Home data. Existing database rows from removed features are not exposed or destructively purged.
 
@@ -31,7 +30,7 @@ Open the forwarded port 3000. The website and API must use this same URL. Saving
 
 On first connection to an empty backend, existing `gentle-static` and `gentle-extra` records at the **same browser origin** are uploaded automatically. Data on the old Sites domain cannot be read from a Codespaces domain. No automatic migration between domains is provided.
 
-The page shows whether changes reached the backend. Failed saves keep a local pending copy; click the status to retry. On a version conflict, export a backup before choosing to load backend records. The revision check prevents an older tab from silently overwriting newer records. Avoid editing the same data in multiple tabs.
+Successful saves are silent. Export a JSON backup using the download icon before the dark-mode button in the header. Failed saves keep a local pending copy and display a floating notice; click it to retry. On a version conflict, export a backup before choosing to load backend records. The revision check prevents an older tab from silently overwriting newer records. Avoid editing the same data in multiple tabs.
 
 SQLite is created in `.easy-everyday-data/`, which is ignored by Git. Set `DATA_DIR` to a persistent disk on a production host. MongoDB has **not** been connected yet. No database credentials belong in frontend code or the GitHub repository.
 
@@ -39,7 +38,7 @@ Anonymous browser cookies separate users. This is not physical device recognitio
 
 ## Hosting
 
-The connected website requires a Node.js host running `npm start`; static hosting alone cannot run the API. Photo upload/view still requires the existing `/api/evidence` Worker, D1 `DB`, R2 `EVIDENCE`, and trusted authentication headers. The Node.js backend does not implement photo storage. No secrets, user records, or database contents are included here.
+The connected website requires a Node.js host running `npm start`; static hosting alone cannot run the API. Confirmation photo capture, upload, viewing, replacement, and the unused evidence Worker have been removed. No secrets, user records, or database contents are included here.
 
 Current Sites publication: https://gentle-day-api-lab.xieyx2007.chatgpt.site/
 

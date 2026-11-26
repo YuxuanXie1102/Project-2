@@ -17,20 +17,16 @@
   const state = () => homeState({ store: read(keys[0]), extra: read(keys[1]) });
   const english = () => localStorage.getItem('gentle-language') === 'en';
   const messages = {
-    loading: ['正在连接数据服务…', 'Connecting to data service…'],
-    saving: ['正在保存…', 'Saving…'],
-    saved: ['已保存到后端', 'Saved to backend'],
     offline: ['尚未同步 · 本机备份已保留，点击重试', 'Not synced · local backup kept. Click to retry'],
     conflict: ['数据版本冲突 · 请先导出备份，再重新载入后端记录', 'Data conflict · export a backup, then load backend records'],
     failed: ['无法连接后端 · 请启动 Node.js 后重试', 'Cannot connect · start Node.js, then retry']
   };
-  const bar = document.createElement('div');
-  bar.id = 'apiStatus'; bar.dataset.noTranslate = ''; bar.setAttribute('role', 'status');
-  bar.style.cssText = 'position:relative;z-index:100;padding:8px 16px;text-align:center;font-size:13px;background:var(--card,#fff5df);color:var(--text,#39281f);display:flex;gap:12px;justify-content:center;flex-wrap:wrap';
+  // Only exceptions appear in a floating notice; normal saves use no layout space.
+  const notice = document.createElement('div');
+  notice.id = 'syncNotice'; notice.dataset.noTranslate = ''; notice.setAttribute('role', 'alert'); notice.hidden = true;
   const status = document.createElement('button'); status.type = 'button';
-  status.style.cssText = 'font:inherit;color:inherit;background:transparent;border:0;cursor:pointer';
-  const backup = document.createElement('button'); backup.type = 'button';
-  backup.textContent = '导出备份 / Export backup';
+  status.className = 'syncMessage';
+  const backup = document.getElementById('exportBackup');
   backup.onclick = () => {
     const exported = { ...state(), legacyBackup: read('gentle-before-api-import') };
     const url = URL.createObjectURL(new Blob([JSON.stringify(exported, null, 2)], { type: 'application/json' }));
@@ -38,15 +34,20 @@
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
   const recover = document.createElement('button'); recover.type = 'button'; recover.hidden = true;
-  recover.textContent = '重新载入后端记录 / Load backend records';
   recover.onclick = () => {
     if (!confirm(english() ? 'Replace this browser cache with backend records? Export your unsynced changes first.' : '用后端记录替换本机缓存？请先导出尚未同步的修改。')) return;
     localStorage.removeItem(metaKey); keys.forEach(key => localStorage.removeItem(key)); location.reload();
   };
-  bar.append(status, backup, recover); document.querySelector('header').after(bar);
+  notice.append(status, recover); document.body.append(notice);
   let mode = 'loading';
   function show(value) {
-    mode = value; status.textContent = messages[value][english() ? 1 : 0]; recover.hidden = value !== 'conflict';
+    mode = value;
+    notice.hidden = !messages[value];
+    status.textContent = messages[value]?.[english() ? 1 : 0] || '';
+    recover.hidden = value !== 'conflict';
+    recover.textContent = english() ? 'Load backend records' : '重新载入后端记录';
+    const label = english() ? 'Export backup' : '导出备份';
+    backup.title = label; backup.setAttribute('aria-label', label);
     document.querySelector('main').inert = ['loading', 'failed', 'conflict'].includes(value);
   }
   let lastLanguage = document.documentElement.lang;
@@ -55,6 +56,7 @@
     lastLanguage = document.documentElement.lang;
     show(mode);
   }).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
+  show(mode);
   function persistMeta() { localStorage.setItem(metaKey, JSON.stringify(meta)); }
   async function request(method, body) {
     const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), 15000);
